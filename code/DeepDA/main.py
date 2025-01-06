@@ -19,7 +19,7 @@ def get_parser():
     parser.add("--config", is_config_file=True, help="config file path")
     parser.add("--seed", type=int, default=0)
     parser.add_argument('--num_workers', type=int, default=0)
-    
+
     # network related
     parser.add_argument('--backbone', type=str, default='resnet50')
     parser.add_argument('--use_bottleneck', type=str2bool, default=True)
@@ -28,7 +28,7 @@ def get_parser():
     parser.add_argument('--data_dir', type=str, required=True)
     parser.add_argument('--src_domain', type=str, required=True)
     parser.add_argument('--tgt_domain', type=str, required=True)
-    
+
     # training related
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--n_epoch', type=int, default=100)
@@ -111,8 +111,8 @@ def train(source_loader, target_train_loader, target_test_loader, model, optimiz
     len_target_loader = len(target_train_loader)
     n_batch = min(len_source_loader, len_target_loader)
     if n_batch == 0:
-        n_batch = args.n_iter_per_epoch 
-    
+        n_batch = args.n_iter_per_epoch
+
     iter_source, iter_target = iter(source_loader), iter(target_train_loader)
 
     best_acc = 0
@@ -124,10 +124,10 @@ def train(source_loader, target_train_loader, target_test_loader, model, optimiz
         train_loss_transfer = utils.AverageMeter()
         train_loss_total = utils.AverageMeter()
         model.epoch_based_processing(n_batch)
-        
+
         if max(len_target_loader, len_source_loader) != 0:
             iter_source, iter_target = iter(source_loader), iter(target_train_loader)
-        
+
         criterion = torch.nn.CrossEntropyLoss()
         for _ in range(n_batch):
             data_source, label_source = next(iter_source) # .next()
@@ -135,10 +135,10 @@ def train(source_loader, target_train_loader, target_test_loader, model, optimiz
             data_source, label_source = data_source.to(
                 args.device), label_source.to(args.device)
             data_target = data_target.to(args.device)
-            
+
             clf_loss, transfer_loss = model(data_source, data_target, label_source)
             loss = clf_loss + args.transfer_loss_weight * transfer_loss
-            
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -148,9 +148,9 @@ def train(source_loader, target_train_loader, target_test_loader, model, optimiz
             train_loss_clf.update(clf_loss.item())
             train_loss_transfer.update(transfer_loss.item())
             train_loss_total.update(loss.item())
-            
+
         log.append([train_loss_clf.avg, train_loss_transfer.avg, train_loss_total.avg])
-        
+
         info = 'Epoch: [{:2d}/{}], cls_loss: {:.4f}, transfer_loss: {:.4f}, total_Loss: {:.4f}'.format(
                         e, args.n_epoch, train_loss_clf.avg, train_loss_transfer.avg, train_loss_total.avg)
         # Test
@@ -169,8 +169,8 @@ def train(source_loader, target_train_loader, target_test_loader, model, optimiz
     print('Transfer result: {:.4f}'.format(best_acc))
 
 def main():
-    parser = get_parser()
-    args = parser.parse_args()
+    parser = get_parser()  # 获取参数解析器
+    args = parser.parse_args()  # 解析命令行参数
     setattr(args, "device", torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
     print(args)
     set_random_seed(args.seed)
@@ -182,13 +182,13 @@ def main():
         setattr(args, "max_iter", args.n_epoch * args.n_iter_per_epoch)
     model = get_model(args)
     optimizer = get_optimizer(model, args)
-    
+
     if args.lr_scheduler:
         scheduler = get_scheduler(optimizer, args)
     else:
         scheduler = None
     train(source_loader, target_train_loader, target_test_loader, model, optimizer, scheduler, args)
-    
+
 
 if __name__ == "__main__":
     main()

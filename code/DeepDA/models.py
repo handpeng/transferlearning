@@ -27,7 +27,7 @@ class TransferNet(nn.Module):
             "max_iter": max_iter,
             "num_class": num_class
         }
-        self.adapt_loss = TransferLoss(**transfer_loss_args)  # 迁移学习的核心模块，实现源领域和目标领域之间的分布对齐 MMD、LMMD、DAAN
+        self.adapt_loss = TransferLoss(**transfer_loss_args)  # 迁移学习的核心模块，实现源领域和目标领域之间的分布对齐 MMD、LMMD、DAAN、adv
         self.criterion = torch.nn.CrossEntropyLoss()  # 分类损失函数，使用交叉熵损失（CrossEntropyLoss）
 
     def forward(self, source, target, source_label):
@@ -66,7 +66,7 @@ class TransferNet(nn.Module):
             tar_clf = self.classifier_layer(target)
             target = nn.Softmax(dim=1)(tar_clf)
         
-        transfer_loss = self.adapt_loss(source, target, **kwargs)
+        transfer_loss = self.adapt_loss(source, target, **kwargs)  # 领域判别器计算迁移损失
         return clf_loss, transfer_loss
     
     def get_parameters(self, initial_lr=1.0):
